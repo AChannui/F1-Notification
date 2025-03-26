@@ -1,0 +1,5 @@
+.secrets.toml
+.idea
+.DS_Store
+*~
+.*.sw*
