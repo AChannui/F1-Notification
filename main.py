@@ -6,6 +6,7 @@ import http.client
 import pytz
 import requests
 from dynaconf import settings
+from schedule_web_scrape import scrape_race_data
 
 logging.basicConfig(
     level=logging.INFO,
@@ -25,6 +26,7 @@ def get_driver_data(meeting_key: int):
         logging.error(f"Error parsing driver data JSON for meeting key {meeting_key}: {e}")
         return None
 
+
 def get_session_data(meeting_key: int, session_name: str):
     request_url = f'https://api.openf1.org/v1/sessions?meeting_key={meeting_key}&session_name={session_name}'
     response = requests.get(request_url)
@@ -32,11 +34,13 @@ def get_session_data(meeting_key: int, session_name: str):
     response.raise_for_status()
     return response.json()
 
+
 def convert_to_local_time(utc_time):
     utc_time = datetime.strptime(utc_time, "%Y-%m-%dT%H:%M:%S%z")
     utc_time = utc_time.replace(tzinfo=pytz.UTC)
     local_time = utc_time.astimezone(pytz.timezone('US/Central'))
     return local_time.strftime('%Y-%m-%d %I:%M %p')
+
 
 def send_notification(message, title):
     payload = {
@@ -47,10 +51,13 @@ def send_notification(message, title):
     }
 
     # uncomment to send notification
-    # response = requests.post(pushover_url, data=payload)
-    # response.raise_for_status()
+    """
+    response = requests.post(pushover_url, data=payload)
+    response.raise_for_status()
+    """
     logging.info("Notification sent successfully.")
     return payload
+
 
 def meeting_message(meeting_data):
     date_start = convert_to_local_time(meeting_data['date_start'])
@@ -61,6 +68,7 @@ def meeting_message(meeting_data):
     )
     return message
 
+
 def grand_prix_message(session_data, weather_data):
     date_start = convert_to_local_time(session_data['date_start'])
     message = (
@@ -68,7 +76,6 @@ def grand_prix_message(session_data, weather_data):
         f"Time: {date_start}\n"
         f"Weather: "
     )
-
 
 
 def main():
@@ -103,7 +110,7 @@ def main():
 if __name__ == '__main__':
     main()
 
-#TODO find circuit laps - thinking hard code map
-#TODO change time to report grand prix time not start time - maybe try web scrape of f1 site
-#TODO write different messages - like over take, sprint start time, final results
-#TODO figure out how to find out the start of a race/schedule
+# TODO find circuit laps - thinking hard code map
+# TODO change time to report grand prix time not start time - maybe try web scrape of f1 site
+# TODO write different messages - like over take, sprint start time, final results
+# TODO figure out how to find out the start of a race/schedule
