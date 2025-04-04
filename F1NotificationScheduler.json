@@ -1,0 +1,17 @@
+{
+  "Comment": "F1 Race 5-minute notification scheduler",
+  "StartAt": "WaitUntilNotificationTime",
+  "States": {
+    "WaitUntilNotificationTime": {
+      "Type": "Wait",
+      "SecondsPath": "$.wait_seconds",
+      "Next": "SendNotification"
+    },
+    "SendNotification": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:region:account-id:function:F1NotificationLambda",
+      "InputPath": "$.event",
+      "End": true
+    }
+  }
+}
