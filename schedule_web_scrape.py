@@ -2,6 +2,8 @@ import errno
 import logging
 import pprint
 import re
+
+import pytz
 import requests
 from datetime import datetime
 
@@ -12,6 +14,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
 
 def get_race_urls():
     """
@@ -52,6 +55,7 @@ def get_race_urls():
         logging.warning("No race URLs found. The website structure may have changed.")
 
     return race_urls
+
 
 def parse_date(year: str, month: str, day: str, time: str):
     """
@@ -100,30 +104,36 @@ def parse_date(year: str, month: str, day: str, time: str):
     # Parse and return datetime object
     return datetime.strptime(date_string, date_format)
 
+
 def scrape_dates(race_url: str):
     time_response = requests.get(race_url)
     time_response.raise_for_status()
 
     time_soup = BeautifulSoup(time_response.content, "html.parser")
 
-    all_days = time_soup.find_all("p", class_="f1-heading tracking-normal text-fs-18px leading-none normal-case font-normal non-italic f1-heading__body font-formulaOne")
-    all_months = time_soup.find_all(class_="rounded-xl py-0.5 px-2 mt-1 leading-none inline-block bg-lightGray text-grey-70")
-    all_times = time_soup.find_all("p", class_="f1-text font-titillium tracking-normal font-normal non-italic normal-case leading-none f1-text__micro text-fs-15px")
+    all_days = time_soup.find_all("p",
+                                  class_="f1-heading tracking-normal text-fs-18px leading-none normal-case font-normal non-italic f1-heading__body font-formulaOne")
+    all_months = time_soup.find_all(
+        class_="rounded-xl py-0.5 px-2 mt-1 leading-none inline-block bg-lightGray text-grey-70")
+    all_times = time_soup.find_all("p",
+                                   class_="f1-text font-titillium tracking-normal font-normal non-italic normal-case leading-none f1-text__micro text-fs-15px")
 
-    events = time_soup.find_all("span", class_="f1-heading tracking-normal text-fs-18px leading-tight normal-case font-bold non-italic f1-heading__body font-formulaOne block mb-xxs")
+    events = time_soup.find_all("span",
+                                class_="f1-heading tracking-normal text-fs-18px leading-tight normal-case font-bold non-italic f1-heading__body font-formulaOne block mb-xxs")
 
     event_types = []
 
     for index in range(len(events)):
         try:
-            time = parse_date(settings['YEAR'], all_months[index].text.strip(), all_days[index].text.strip(), all_times[index].text.strip())
+            time = parse_date(settings['YEAR'], all_months[index].text.strip(), all_days[index].text.strip(),
+                              all_times[index].text.strip())
         except ValueError as e:
             logging.warning(f"Error parsing date: {e}, skipping")
             return None
 
         event_info = {
             "event": events[index].text.strip(),
-            "date": time,
+            "date": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         }
         event_types.append(event_info)
 
@@ -134,7 +144,8 @@ def scrape_laps(race_url: str):
     lap_response = requests.get(race_url + "/circuit")
     lap_response.raise_for_status()
     lap_soup = BeautifulSoup(lap_response.content, "html.parser")
-    lap_data = lap_soup.find_all("h2", class_="f1-heading tracking-normal text-fs-22px tablet:text-fs-32px leading-tight normal-case font-bold non-italic f1-heading__body font-formulaOne")
+    lap_data = lap_soup.find_all("h2",
+                                 class_="f1-heading tracking-normal text-fs-22px tablet:text-fs-32px leading-tight normal-case font-bold non-italic f1-heading__body font-formulaOne")
     lap_text = lap_data[1].text.strip()
     if not lap_text.isdigit():
         logging.warning(f"Laps is not a number: {lap_text}, skipping")
@@ -149,7 +160,6 @@ def scrape_laps(race_url: str):
     return laps
 
 
-
 def scrape_race_data():
     race_info = []
     race_urls = get_race_urls()
@@ -162,6 +172,7 @@ def scrape_race_data():
     logging.info(f"Found {len(race_info)} grand prix data")
     pprint.pprint(race_info)
     return race_info
+
 
 if __name__ == "__main__":
     scrape_race_data()
