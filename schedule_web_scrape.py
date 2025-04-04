@@ -127,15 +127,15 @@ def scrape_dates(race_url: str):
         try:
             time = parse_date(settings['YEAR'], all_months[index].text.strip(), all_days[index].text.strip(),
                               all_times[index].text.strip())
+            event_info = {
+                "event": events[index].text.strip(),
+                "date": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            }
+            event_types.append(event_info)
         except ValueError as e:
             logging.warning(f"Error parsing date: {e}, skipping")
-            return None
-
-        event_info = {
-            "event": events[index].text.strip(),
-            "date": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
-        }
-        event_types.append(event_info)
+            if not event_types:
+                return None
 
     return event_types
 
@@ -167,7 +167,7 @@ def scrape_race_data():
         race_schedules = scrape_dates(url)
         race_laps = scrape_laps(url)
         if race_schedules:
-            race_info.append({"url": url, "date": race_schedules, "laps": race_laps})
+            race_info.append({"url": url, "dates": race_schedules, "laps": race_laps})
 
     logging.info(f"Found {len(race_info)} grand prix data")
     pprint.pprint(race_info)
