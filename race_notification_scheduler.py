@@ -1,8 +1,9 @@
 import json
 import logging
+
 import boto3
-from datetime import datetime, timedelta
 import pytz
+from datetime import datetime, timedelta
 from schedule_web_scrape import scrape_race_data
 
 logging.basicConfig(level=logging.INFO)
@@ -31,8 +32,12 @@ def lambda_handler(event, context):
         laps = race.get('laps', 'N/A')
 
         # Process each event in the race weekend
-        for event in race['date']:
-            event_time = event['date']
+        for event in race['dates']:
+            event_time_iso = event['date']
+            event_time = datetime.fromisoformat(event_time_iso)
+            if event_time.tzinfo is None:
+                event_time = event_time.replace(tzinfo=pytz.UTC)
+
             event_name = event['event']
 
             # Skip past events
@@ -89,3 +94,6 @@ def lambda_handler(event, context):
         'statusCode': 200,
         'body': json.dumps(f'Scheduled {scheduled_events} event notifications')
     }
+
+if __name__ == '__main__':
+    lambda_handler(None, None)

@@ -110,7 +110,5 @@ def main():
 if __name__ == '__main__':
     main()
 
-# TODO find circuit laps - thinking hard code map
-# TODO change time to report grand prix time not start time - maybe try web scrape of f1 site
+# TODO fix bug with scheduler lambda - datetime not str
 # TODO write different messages - like over take, sprint start time, final results
-# TODO figure out how to find out the start of a race/schedule
